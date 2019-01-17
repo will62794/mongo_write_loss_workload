@@ -15,7 +15,7 @@ do
 	echo "Killing mongod..."
 	killall -9 mongod
 	echo "Restarting mongod..."
-	mongodb/bin/mongod --config /tmp/mongo_port_27017.conf
+	~/mongodb/bin/mongod --config /tmp/mongo_port_27017.conf
 	# Sleep a bit before next restart.
 	sleep_secs=`./randexp.py`
 	echo $sleep_secs
