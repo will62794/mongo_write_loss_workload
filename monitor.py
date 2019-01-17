@@ -7,7 +7,7 @@ for hostname in hostnames:
 	port=27017
 	replset = "rs0"
 	client = MongoClient(hostname, port, replicaset=replset)
-	res = client.admin.command("replSetGetStatus")["stateStr"]
+	res = client.admin.command("replSetGetStatus")
 	members = res["members"]
 	member = [m for m in members if "self" in m][0]
 	print hostname, member['stateStr']
