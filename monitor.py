@@ -1,4 +1,5 @@
 import pymongo
+from pymongo import MongoClient
 
 hostnames=["10.2.0.200", "10.2.0.201", "10.2.0.202"]
 
