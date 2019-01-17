@@ -9,5 +9,5 @@ for hostname in hostnames:
 	client = MongoClient(hostname, port, replicaset=replset)
 	res = client.admin.command("replSetGetStatus")
 	members = res["members"]
-	member = [m for m in members if "self" in m][0]
+	member = [m for m in members if "self" in m and m["self"]][0]
 	print hostname, member['stateStr']
