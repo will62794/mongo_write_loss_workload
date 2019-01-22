@@ -49,7 +49,7 @@ def check_docs(db, coll, acknowledged_doc_ids):
 
 	# Find all documents in the collection the workload ran against.
 	doc_ids_found = set([d["_id"] for d in list(coll.find())])
-	diff = doc_ids_found.difference(acknowledged_doc_ids)
+	diff = acknowledged_doc_ids.difference(doc_ids_found)
 	return {
 		"acknowledged" : len(acknowledged_doc_ids),
 		"found" : len(doc_ids_found),
