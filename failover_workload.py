@@ -2,18 +2,20 @@ import pymongo
 import time
 from pymongo import MongoClient
 import threading
+import argparse
+import pprint
 
 #
-# A basic write workload to measure w:1 write loss in the face of failovers.
+# A basic write workload to measure w:<N> write loss in the face of failovers.
 #
 
 class WriteWorker(threading.Thread):
 
-	def __init__(self, hostname, port, replset, dbName, collName, tid, nDocs):
+	def __init__(self, hostname, port, replset, dbName, collName, nDocs, writeConcern, tid):
 		threading.Thread.__init__(self)
 		self.client = MongoClient(hostname, port, replicaset=replset)
 		self.db = self.client[dbName]
-		self.collection = self.db[collName].with_options(write_concern=pymongo.write_concern.WriteConcern(w=1))
+		self.collection = self.db[collName].with_options(write_concern=writeConcern)
 		self.tid = tid
 		self.nDocs = nDocs
 		self.docs_acknowledged = []
@@ -33,56 +35,97 @@ class WriteWorker(threading.Thread):
 				print "Caught AutoReconnect exception: ", e
 			time.sleep(0.2)		
 
-	def get_acknowledged_docs(self):
-		return self.docs_acknowledged
+	def get_acknowledged_ids(self):
+		""" Return the set of all document ids whose insert op was acknowledged as successful."""
+		return [d["_id"] for d in self.docs_acknowledged]
 
 	def run(self):
 		self.insert_docs()
 
-def check_docs(db, coll):
-	# Do a dummy majority write to ensure that all previous writes committed.
-	dummyColl = db["dummy"].with_options(write_concern=pymongo.write_concern.WriteConcern(w="majority"))
-	dummyColl.insert_one({"dummy": 1})
+def check_docs(db, coll, acknowledged_doc_ids):
+	""" Compare the set of acknowledged inserts versus the set of documents in the database. 
+
+	Returns a set of documents that were acknowledged but are not present in the database."""
 
 	# Find all documents in the collection the workload ran against.
-	all_docs = list(coll.find())
-	print "Found %d documents in collection at end of test." % len(all_docs)
+	doc_ids_found = set([d["_id"] for d in list(coll.find())])
+	diff = doc_ids_found.difference(acknowledged_doc_ids)
+	return {
+		"acknowledged" : len(acknowledged_doc_ids),
+		"found" : len(doc_ids_found),
+		# The set of writes that were acknowledged but did not appear in the database.
+		"lost": diff,
+		"lost_count" : len(diff)
+	}
+	print "Found %d documents in collection at end of test." % len(doc_ids_found)
 
-#
-# Workload parameters.
-#
+def cmdline_args():
+	""" Parse workload parameters. """
+	p = argparse.ArgumentParser()
+	# 'host' should be a node in the test replica set.
+	p.add_argument("--host", type=str, required=True)
+	p.add_argument("--port", type=int, required=True)
+	p.add_argument("--replset", type=str, required=True)
+	p.add_argument("--numWorkers", type=int, default=10)
+	p.add_argument("--numDocs", type=int, default=1000)
+	p.add_argument("--writeConcern", type=str, default="1")
+	p.add_argument("--dbName", type=str, default="test")
+	p.add_argument("--collName", type=str, default="docs")
+	args = p.parse_args()
 
-
-hostname = "10.2.0.200" # A node in the DSI replica set.
-port = 27017
-replset = "rs0"
-nDocs = 650
-dbName="test"
-collName="docs"
-nWorkers = 5
+	return args
 
 def run_workload():
-	client = MongoClient(hostname, port, replicaset=replset)
-	db = client[dbName]
-	collection = db[collName].with_options(write_concern=pymongo.write_concern.WriteConcern(w="majority"))
-	print collection.write_concern
-	collection.drop()	
-	tid = 0
+	args = cmdline_args()
+
+	# Support numeric or 'majority' write concerns.
+	writeConcern = args.writeConcern
+	if not args.writeConcern == "majority":
+		writeConcern = int(writeConcern)
+
+
+	# Clean up the test collection.
+	print "Dropping test collection."
+	client = MongoClient(args.host, args.port, replicaset=args.replset)
+	db = client[args.dbName]
+	coll = db[args.collName].with_options(write_concern=pymongo.write_concern.WriteConcern(w="majority"))
+	coll.drop()	
+
+	print "Running workload with parameters:"
+	pprint.pprint(vars(args))
+	print "Using writeConcern=" + str(writeConcern)
 
 	# Run the write workloads.
 	workers = []
-	for wid in range(nWorkers):
-		worker = WriteWorker(hostname, port, replset, dbName, collName, wid, nDocs)
+	for wid in range(args.numWorkers):
+		wConcern = pymongo.write_concern.WriteConcern(w=writeConcern)
+		worker = WriteWorker(args.host, args.port, args.replset, args.dbName, args.collName, args.numDocs, wConcern, wid)
 		worker.start()
 		workers.append(worker)
 
 	for w in workers:
 		w.join()
 
-	print "Tried to insert %d total documents across %d workers. " % (nDocs * nWorkers, nWorkers)
+	print "Tried to insert %d total documents across %d workers. " % (args.numDocs * args.numWorkers, args.numWorkers)
 	for w in workers:
-		print "Worker %d, num docs acknowledged by server: %d" % (w.tid, len(w.get_acknowledged_docs()))
+		print "Worker %d, writes acknowledged by server: %d" % (w.tid, len(w.get_acknowledged_ids()))
 
-	check_docs(db, collection)
+	# Do a dummy majority write to ensure that all previous writes committed.
+	dummyColl = db["_dummy_"].with_options(write_concern=pymongo.write_concern.WriteConcern(w="majority"))
+	dummyColl.insert_one({"dummy": 1})
 
-run_workload()
+	acknowledged_docid_set = []
+	for w in workers:
+		acknowledged_docid_set.extend(w.get_acknowledged_ids())
+	acknowledged_docid_set = set(acknowledged_docid_set)
+
+	# Create a new client for the checking procedure.
+	client = MongoClient(args.host, args.port, replicaset=args.replset)
+	db = client[args.dbName]
+	coll = db[args.collName]
+	stats = check_docs(db, coll, acknowledged_docid_set)
+	print "Finished checking collection."
+	print stats
+
+if __name__ == '__main__':
+	run_workload()
