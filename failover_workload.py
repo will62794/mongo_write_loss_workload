@@ -33,7 +33,7 @@ class WriteWorker(threading.Thread):
 				print "Worker %d, inserted doc: %s" % (self.tid, doc_to_insert)
 			except pymongo.errors.AutoReconnect as e:
 				print "Caught AutoReconnect exception: ", e
-			time.sleep(0.2)		
+			# time.sleep(0.2)		
 
 	def get_acknowledged_ids(self):
 		""" Return the set of all document ids whose insert op was acknowledged as successful."""
