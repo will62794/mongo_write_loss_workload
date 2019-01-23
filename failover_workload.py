@@ -85,7 +85,7 @@ def run_workload():
 		writeConcern = int(writeConcern)
 
 	# Set up basic logging.
-	logging.basicConfig(filename=args.log, filemode='w', format='%(levelname)s - %(message)s', level=logging.INFO)
+	logging.basicConfig(filename=args.log, filemode='w', format='%(asctime)s %(message)s', level=logging.INFO)
 
 	# Clean up the test collection.
 	logging.info("Dropping test collection.")
