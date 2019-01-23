@@ -23,7 +23,7 @@ randexp(){
 # Continuously kill and restart mongod processes running locally.
 while true
 do
-	sleep_before_restart_secs="10"
+	sleep_before_restart_secs=`randexp`
 	echo "[RUNNING] Killing mongod on `hostname`"
 	killall -9 mongod
 
