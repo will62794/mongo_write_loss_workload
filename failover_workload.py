@@ -12,7 +12,7 @@ import logging
 
 class WriteWorker(threading.Thread):
 
-	def __init__(self, hostname, port, replset, dbName, collName, nDocs, writeConcern, tid):
+	def __init__(self, hostname, port, replset, dbName, collName, nDocs, timeLimitSecs, writeConcern, tid):
 		threading.Thread.__init__(self)
 		self.client = MongoClient(hostname, port, replicaset=replset)
 		self.db = self.client[dbName]
@@ -20,11 +20,21 @@ class WriteWorker(threading.Thread):
 		self.tid = tid
 		self.nDocs = nDocs
 		self.docs_acknowledged = []
+		# Terminate if you reach the time limit first. If you finish inserting all of your docs before the time limit,
+		# then also terminate.
+		self.timeLimitSecs = timeLimitSecs
 
 	def insert_docs(self):
+		t_start = time.time()
 		for i in range(self.nDocs):
+
+			# Check time limit.
+			elapsed = time.time() - t_start
+			if self.timeLimitSecs and elapsed > self.timeLimitSecs:
+				logging.info("Worker %d reached time limit of %d seconds" % (self.tid, self.timeLimitSecs))
+				return
+
 			try:
-				# doc_to_insert = {"tid": tid, "id": i}
 				doc_id = "%d_%d" % (self.tid, i)
 				doc_to_insert = {"_id": doc_id}
 				res = self.collection.insert_one(doc_to_insert)
@@ -34,7 +44,7 @@ class WriteWorker(threading.Thread):
 				logging.info("Worker %d, inserted doc: %s" % (self.tid, doc_to_insert))
 			except pymongo.errors.AutoReconnect as e:
 				logging.info("Caught AutoReconnect exception: " + str(e))
-			# time.sleep(0.2)		
+
 
 	def get_acknowledged_ids(self):
 		""" Return the set of all document ids whose insert op was acknowledged as successful."""
@@ -68,6 +78,7 @@ def cmdline_args():
 	p.add_argument("--replset", type=str, required=True)
 	p.add_argument("--numWorkers", type=int, default=10)
 	p.add_argument("--numDocs", type=int, default=1000)
+	p.add_argument("--timeLimitSecs", type=int, default=None)
 	p.add_argument("--writeConcern", type=str, default="1")
 	p.add_argument("--dbName", type=str, default="test")
 	p.add_argument("--collName", type=str, default="docs")
@@ -102,7 +113,7 @@ def run_workload():
 	workers = []
 	for wid in range(args.numWorkers):
 		wConcern = pymongo.write_concern.WriteConcern(w=writeConcern)
-		worker = WriteWorker(args.host, args.port, args.replset, args.dbName, args.collName, args.numDocs, wConcern, wid)
+		worker = WriteWorker(args.host, args.port, args.replset, args.dbName, args.collName, args.numDocs, args.timeLimitSecs, wConcern, wid)
 		worker.start()
 		workers.append(worker)
 

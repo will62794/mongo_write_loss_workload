@@ -7,9 +7,12 @@
 
 set -e
 
-restart_interval_mean_secs="100"
+restart_interval_mean_secs="80"
 numDocs="20000"
+timeLimitSecs="100"
 numWorkers="30"
+writeConcern="2"
+logfile="workload_w${writeConcern}.log"
 
 # Set up the mongod nodes.
 echo "--- Setting up the mongod nodes. ---"
@@ -30,7 +33,7 @@ commands="$commands && rm -rf mongo_write_loss_workload"
 commands="$commands && git clone $git_repo"
 killcmd="pkill -f failover_workload.py" # kill previously running workload.
 # workloadcmd="nohup python mongo_write_loss_workload/failover_workload.py --host $hostname --port 27017 --replset rs0 --numDocs 10000 > workload-`date +"%T"`.log &"
-workloadcmd="nohup python mongo_write_loss_workload/failover_workload.py --host $hostname --port 27017 --replset rs0 --numDocs $numDocs --numWorkers $numWorkers > workload.log &"
+workloadcmd="nohup python mongo_write_loss_workload/failover_workload.py --host $hostname --port 27017 --replset rs0 --numDocs $numDocs --numWorkers $numWorkers --writeConcern $writeConcern --log $logfile --timeLimitSecs $timeLimitSecs &"
 python ../bin/conn.py wc -c "$killcmd"
 python ../bin/conn.py wc -c "$commands" -c "$workloadcmd"
 
