@@ -13,7 +13,7 @@ for hostname in hostnames:
 	port=27017
 	replset = "rs0"
 	try:
-		client = MongoClient(hostname, port, replicaset=replset, connectTimeoutMS=2000, serverSelectionTimeoutMS=1000)
+		client = MongoClient(hostname, port, replicaset=replset, connectTimeoutMS=300, serverSelectionTimeoutMS=300)
 		res = client.admin.command("replSetGetStatus")
 		members = res["members"]
 		member = [m for m in members if hostname in m["name"]][0]
