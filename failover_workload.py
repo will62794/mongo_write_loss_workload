@@ -4,6 +4,7 @@ from pymongo import MongoClient
 import threading
 import argparse
 import pprint
+import logging
 
 #
 # A basic write workload to measure w:<N> write loss in the face of failovers.
@@ -30,9 +31,9 @@ class WriteWorker(threading.Thread):
 				acknowledged = res.acknowledged
 				if acknowledged:
 					self.docs_acknowledged.append(doc_to_insert);
-				print "Worker %d, inserted doc: %s" % (self.tid, doc_to_insert)
+				logging.info("Worker %d, inserted doc: %s" % (self.tid, doc_to_insert))
 			except pymongo.errors.AutoReconnect as e:
-				print "Caught AutoReconnect exception: ", e
+				logging.info("Caught AutoReconnect exception: " + str(e))
 			# time.sleep(0.2)		
 
 	def get_acknowledged_ids(self):
@@ -57,7 +58,6 @@ def check_docs(db, coll, acknowledged_doc_ids):
 		"lost": diff,
 		"lost_count" : len(diff)
 	}
-	print "Found %d documents in collection at end of test." % len(doc_ids_found)
 
 def cmdline_args():
 	""" Parse workload parameters. """
@@ -71,6 +71,7 @@ def cmdline_args():
 	p.add_argument("--writeConcern", type=str, default="1")
 	p.add_argument("--dbName", type=str, default="test")
 	p.add_argument("--collName", type=str, default="docs")
+	p.add_argument("--log", type=str, default="workload.log")
 	args = p.parse_args()
 
 	return args
@@ -83,17 +84,19 @@ def run_workload():
 	if not args.writeConcern == "majority":
 		writeConcern = int(writeConcern)
 
+	# Set up basic logging.
+	logging.basicConfig(filename=args.log, filemode='w', format='%(levelname)s - %(message)s', level=logging.INFO)
 
 	# Clean up the test collection.
-	print "Dropping test collection."
+	logging.info("Dropping test collection.")
 	client = MongoClient(args.host, args.port, replicaset=args.replset)
 	db = client[args.dbName]
 	coll = db[args.collName].with_options(write_concern=pymongo.write_concern.WriteConcern(w="majority"))
 	coll.drop()	
 
-	print "Running workload with parameters:"
-	pprint.pprint(vars(args))
-	print "Using writeConcern=" + str(writeConcern)
+	logging.info("Running workload with parameters:")
+	logging.info(vars(args))
+	logging.info("Using writeConcern=" + str(writeConcern))
 
 	# Run the write workloads.
 	workers = []
@@ -106,9 +109,9 @@ def run_workload():
 	for w in workers:
 		w.join()
 
-	print "Tried to insert %d total documents across %d workers. " % (args.numDocs * args.numWorkers, args.numWorkers)
+	logging.info("Tried to insert %d total documents across %d workers. " % (args.numDocs * args.numWorkers, args.numWorkers))
 	for w in workers:
-		print "Worker %d, writes acknowledged by server: %d" % (w.tid, len(w.get_acknowledged_ids()))
+		logging.info("Worker %d, writes acknowledged by server: %d" % (w.tid, len(w.get_acknowledged_ids())))
 
 	# Do a dummy majority write to ensure that all previous writes committed.
 	dummyColl = db["_dummy_"].with_options(write_concern=pymongo.write_concern.WriteConcern(w="majority"))
@@ -124,8 +127,8 @@ def run_workload():
 	db = client[args.dbName]
 	coll = db[args.collName]
 	stats = check_docs(db, coll, acknowledged_docid_set)
-	print "Finished checking collection."
-	print stats
+	logging.info("Finished checking collection.")
+	logging.info(stats)
 
 if __name__ == '__main__':
 	run_workload()
