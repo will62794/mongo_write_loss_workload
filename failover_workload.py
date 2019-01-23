@@ -26,13 +26,13 @@ class WriteWorker(threading.Thread):
 
 	def insert_docs(self):
 		t_start = time.time()
-		for i in range(self.nDocs):
+		for i in xrange(self.nDocs):
 
 			# Check time limit.
-			# elapsed = time.time() - t_start
-			# if self.timeLimitSecs and elapsed > self.timeLimitSecs:
-			# 	logging.info("Worker %d reached time limit of %d seconds" % (self.tid, self.timeLimitSecs))
-			# 	return
+			elapsed = time.time() - t_start
+			if self.timeLimitSecs and elapsed > self.timeLimitSecs:
+				logging.info("Worker %d reached time limit of %d seconds" % (self.tid, self.timeLimitSecs))
+				return
 
 			try:
 				doc_id = "%d_%d" % (self.tid, i)
