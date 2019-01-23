@@ -25,8 +25,12 @@ while true
 do
 	echo "Killing mongod on `hostname`"
 	killall -9 mongod
-	echo "Restarting mongod."
+
+	sleep_before_restart_secs="10"
+	echo "Restarting mongod in $sleep_before_restart_secs seconds."
+	sleep $sleep_before_restart_secs
 	mongodb/bin/mongod --config /tmp/mongo_port_27017.conf
+	echo "Restarted mongod."
 
 	# Sleep a bit before next restart.
 	sleep_secs=`randexp`
