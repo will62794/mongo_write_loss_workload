@@ -39,7 +39,8 @@ do
 	killall -9 mongod
 
 	# Sleep a bit before restarting.
-	sleep_before_restart_secs=`randexp`
+	# sleep_before_restart_secs=`randexp`
+	sleep_before_restart_secs="10"
 	echo "[STOPPED] Restarting mongod in $sleep_before_restart_secs seconds."
 	sleep $sleep_before_restart_secs
 
