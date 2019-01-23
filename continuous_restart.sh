@@ -20,9 +20,6 @@ randexp(){
 	python -c "import random;print int(random.expovariate(1.0/$restart_interval_mean))"
 }
 
-# Kill previously running scripts.
-pkill -f continuous_restart
-
 # Continuously kill and restart mongod processes running locally.
 while true
 do
