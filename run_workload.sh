@@ -7,8 +7,8 @@
 
 set -e
 
-restart_interval_mean_secs="50"
-numDocs="10000"
+restart_interval_mean_secs="100"
+numDocs="20000"
 numWorkers="30"
 
 # Set up the mongod nodes.

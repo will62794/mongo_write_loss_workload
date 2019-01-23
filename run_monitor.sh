@@ -20,5 +20,5 @@ echo ""
 echo "###################################"
 echo "### MONITOR CONTINUOUS RESTARTS ###"
 echo "###################################"
-python ../bin/conn.py md.0 md.1 md.2 -c "hostname && tail -n 8 restarts.log && echo ''"
+python ../bin/conn.py md.0 md.1 md.2 -c "printf 'HOST:' && hostname && tail -n 4 restarts.log && echo ''"
 # python ../bin/conn.py md.0 md.1 md.2 -c './bin/mongo --quiet --eval "rs.status().members.filter(m => m.self)[0].stateStr"'
