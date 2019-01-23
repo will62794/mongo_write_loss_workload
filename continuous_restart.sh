@@ -22,7 +22,7 @@ randexp(){
 
 # Kill and restart the node so we know it's running.
 echo "Making sure the mongod is running."
-killall -9 mongod
+killall -q -9 mongod
 mongodb/bin/mongod --config /tmp/mongo_port_27017.conf
 
 # Sleep initially so we don't kill the node right away.
