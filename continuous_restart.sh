@@ -11,6 +11,8 @@
 # frequency.
 #
 
+set -e
+
 restart_interval_mean="$1"
 
 # Draw a random variable from an exponential distribution with specified mean.
@@ -29,7 +31,6 @@ do
 	# Sleep a bit before next restart.
 	sleep_secs=`randexp`
 	echo "Sleeping for ${sleep_secs} seconds before next restart"
-	echo "---------"
 	echo ""
 	sleep $sleep_secs
 done
