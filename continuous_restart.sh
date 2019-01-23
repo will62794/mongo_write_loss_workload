@@ -23,7 +23,7 @@ randexp(){
 # Continuously kill and restart mongod processes running locally.
 while true
 do
-	echo "Killing mongod on `ifconfig`"
+	echo "Killing mongod on `hostname`"
 	killall -9 mongod
 	echo "Restarting mongod."
 	mongodb/bin/mongod --config /tmp/mongo_port_27017.conf
