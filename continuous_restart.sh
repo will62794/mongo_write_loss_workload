@@ -35,6 +35,5 @@ do
 	# Sleep a bit before next restart.
 	sleep_secs=`randexp`
 	echo "Sleeping for ${sleep_secs} seconds before next restart"
-	echo ""
 	sleep $sleep_secs
 done
