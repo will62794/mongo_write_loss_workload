@@ -23,6 +23,12 @@ randexp(){
 # Continuously kill and restart mongod processes running locally.
 while true
 do
+	# Sleep a bit before next restart.
+	sleep_secs=`randexp`
+	echo "[RUNNING] Mongod running. Sleeping for ${sleep_secs} seconds before the next restart."
+	sleep $sleep_secs
+
+	# Kill the mongod.
 	sleep_before_restart_secs=`randexp`
 	echo "[RUNNING] Killing mongod on `hostname`"
 	killall -9 mongod
@@ -31,8 +37,4 @@ do
 	sleep $sleep_before_restart_secs
 	mongodb/bin/mongod --config /tmp/mongo_port_27017.conf
 
-	# Sleep a bit before next restart.
-	sleep_secs=`randexp`
-	echo "[RUNNING] Restarted mongod. Sleeping for ${sleep_secs} seconds before next restart"
-	sleep $sleep_secs
 done
