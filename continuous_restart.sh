@@ -15,7 +15,7 @@ restart_interval_mean="$1"
 
 # Draw a random variable from an exponential distribution with specified mean.
 randexp(){
-	python -c "import random;print random.expovariate(1.0/$restart_interval_mean)"
+	python -c "import random;print int(random.expovariate(1.0/$restart_interval_mean))"
 }
 
 # Continuously kill and restart mongod processes running locally.
