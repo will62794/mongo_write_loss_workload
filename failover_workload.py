@@ -62,12 +62,15 @@ def check_docs(db, coll, acknowledged_doc_ids):
 	# Find all documents in the collection the workload ran against.
 	doc_ids_found = set([d["_id"] for d in list(coll.find())])
 	diff = acknowledged_doc_ids.difference(doc_ids_found)
+	# The percentage of writes that were acknowledged and also became durable.
+	durable_pct = (1.0-float(len(diff))/len(acknowledged_doc_ids)) * 100
 	return {
 		"acknowledged" : len(acknowledged_doc_ids),
 		"found" : len(doc_ids_found),
 		# The set of writes that were acknowledged but did not appear in the database.
 		"lost": diff,
-		"lost_count" : len(diff)
+		"lost_count" : len(diff),
+		"durable_pct" : round(durable_pct, 3)
 	}
 
 def cmdline_args():
