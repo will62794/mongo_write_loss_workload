@@ -35,7 +35,7 @@ killall -9 mongod || true
 mongodb/bin/mongod --config /tmp/mongo_port_27017.conf
 
 # Sleep initially so we don't kill the node right away.
-sleep_secs=`randexp`
+sleep_secs=`randweibull`
 echo "[RUNNING] Sleeping initially for ${sleep_secs} seconds"
 sleep $sleep_secs
 
