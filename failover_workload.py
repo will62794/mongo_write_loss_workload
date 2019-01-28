@@ -41,7 +41,8 @@ class WriteWorker(threading.Thread):
 				acknowledged = res.acknowledged
 				if acknowledged:
 					self.docs_acknowledged.append(doc_to_insert);
-				logging.info("Worker %d, inserted doc: %s" % (self.tid, doc_to_insert))
+				strvals = (self.tid, doc_to_insert, elapsed, self.timeLimitSecs, (elapsed/self.timeLimitSecs*100))
+				logging.info("Worker %d, inserted doc: %s, elapsed: %d/%d secs, progress: %d%%" % strvals)
 			except pymongo.errors.AutoReconnect as e:
 				logging.info("Caught AutoReconnect exception: " + str(e))
 
