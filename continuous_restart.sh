@@ -26,7 +26,7 @@ randexp(){
 # Draw a random value from a Weibull distribution with specified shape parameter.
 randweibull() {
 	weibull_shape_param="1.5" # obtained empirically.
-	python -c "import random;print int(np.random.weibull($weibull_shape_param)*$restart_interval_mean)"
+	python -c "import numpy;print int(numpy.random.weibull($weibull_shape_param)*$restart_interval_mean)"
 }
 
 # Kill and restart the node so we know it's running.
