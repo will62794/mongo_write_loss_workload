@@ -7,17 +7,26 @@
 #
 # ./continuous_restart.sh <mean>
 #
-# where "mean" is the mean of the exponential distribution to be used for the failure
-# frequency.
+# where "mean" is the scale parameter used for Weibull restart distribution.
 #
 
 set -e
 
 restart_interval_mean="$1"
 
-# Draw a random variable from an exponential distribution with specified mean.
+# Sleep for a fixed amount of time before restarting nodes.
+sleep_before_restart_secs="10"
+
+
+# Draw a random value from an exponential distribution with specified mean.
 randexp(){
 	python -c "import random;print int(random.expovariate(1.0/$restart_interval_mean))"
+}
+
+# Draw a random value from a Weibull distribution with specified shape parameter.
+randweibull() {
+	weibull_shape_param="1.5" # obtained empirically.
+	python -c "import random;print int(np.random.weibull($weibull_shape_param)*$restart_interval_mean)"
 }
 
 # Kill and restart the node so we know it's running.
@@ -39,8 +48,6 @@ do
 	killall -9 mongod
 
 	# Sleep a bit before restarting.
-	# sleep_before_restart_secs=`randexp`
-	sleep_before_restart_secs="10"
 	echo "[STOPPED] Restarting mongod in $sleep_before_restart_secs seconds."
 	sleep $sleep_before_restart_secs
 
@@ -48,7 +55,7 @@ do
 	mongodb/bin/mongod --config /tmp/mongo_port_27017.conf
 
 	# Sleep a bit before next restart.
-	sleep_secs=`randexp`
+	sleep_secs=`randweibull`
 	echo "[RUNNING] Restarted mongod. Sleeping for ${sleep_secs} seconds before the next restart."
 	sleep $sleep_secs
 
