@@ -14,10 +14,6 @@ set -e
 
 restart_interval_mean="$1"
 
-# Sleep for a fixed amount of time before restarting nodes.
-sleep_before_restart_secs="10"
-
-
 # Draw a random value from an exponential distribution with specified mean.
 randexp(){
 	python -c "import random;print int(random.expovariate(1.0/$restart_interval_mean))"
@@ -47,11 +43,8 @@ do
 	echo "[RUNNING] Killing mongod on `hostname`"
 	killall -9 mongod
 
-	# Sleep a bit before restarting.
-	echo "[STOPPED] Restarting mongod in $sleep_before_restart_secs seconds."
-	sleep $sleep_before_restart_secs
-
 	# Restart the node.
+	echo "[STOPPED] Restarting mongod."
 	mongodb/bin/mongod --config /tmp/mongo_port_27017.conf
 
 	# Sleep a bit before next restart.
