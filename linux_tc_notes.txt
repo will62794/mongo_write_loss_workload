@@ -1,0 +1,10 @@
+
+Linux Traffic Control (tc)
+
+# Set 100ms of latency on device 'eth0'
+# sudo tc qdisc add dev eth0 root netem delay 100ms
+
+# Remove tc rule on 'eth0'
+# sudo tc qdisc del dev eth0 root netem
+
+# sudo tc filter add dev eth0 parent 1:0 protocol ip prio 1 u32 match ip sport 27017 0xffff flowid 2:1
