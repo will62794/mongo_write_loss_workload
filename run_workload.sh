@@ -4,18 +4,30 @@
 #
 # Run this from inside the DSI "work directory". 
 #
+# e.g.
+#
+# ./run_workload.sh <timeLimitSecs> <writeConcern> <netLatencyMS>
+#
+# ./run_workload.sh 3600 1 100
+#
+# ./run_workload.sh 3600 majority 0
+#
 
 set -e
+
+# Require parameters
+if [ "$#" -ne 3 ]; then
+    echo "Illegal number of parameters. 3 parameters required, e.g. ./run_workload.sh 3600 1 100"
+    exit 0
+fi
 
 
 restart_interval_mean_secs="100"
 numDocs="200000000"
-# timeLimitSecs="3600" # 1 hour
-timeLimitSecs="900" # 15 minutes
-# timeLimitSecs="60" # 1 minute
+timeLimitSecs="$1"
 numWorkers="30"
-writeConcern="1"
-netLatencyMS="100"
+writeConcern="$2"
+netLatencyMS="$3"
 datestr=`date +"%Y_%m_%d_%I_%M_%S"`
 logfile="workload_results/workload_w${writeConcern}_latency_${netLatencyMS}ms_timeLimitSecs_${timeLimitSecs}_${datestr}.log"
 
@@ -25,7 +37,9 @@ python ../bin/conn.py -d md.0 md.1 md.2 -c "sudo yum -y install tc numpy"
 #
 # Set up the mongod nodes.
 #
+echo "------------------------------------"
 echo "--- Setting up the mongod nodes. ---"
+echo "------------------------------------"
 git_repo="https://github.com/will62794/mongo_write_loss_workload"
 commands="rm -rf mongo_write_loss_workload"
 commands="$commands && git clone --progress $git_repo"
@@ -59,7 +73,9 @@ python ../bin/conn.py -d md.0 md.1 md.2 -c "$commands" -c "$runcmd"
 #
 # Set up the workload client.
 #
+echo "---------------------------------------"
 echo "--- Setting up the workload client. ---"
+echo "---------------------------------------"
 hostname=`grep -m 1 "private_ip" infrastructure_provisioning.out.yml | sed "s/.*private_ip\: //"`
 commands="pip install --user pymongo"
 commands="$commands && rm -rf mongo_write_loss_workload"
