@@ -60,7 +60,22 @@ def check_docs(db, coll, acknowledged_doc_ids):
 	Returns a set of documents that were acknowledged but are not present in the database."""
 
 	# Find all documents in the collection the workload ran against.
-	doc_ids_found = set([d["_id"] for d in list(coll.find())])
+	def get_doc_ids_with_retries(n):
+		""" Retry a find command n times. """
+		retries = n 	
+		while retries > 0 :	
+			try:
+				return set([d["_id"] for d in list(coll.find())])
+			except pymongo.errors.AutoReconnect as e:
+				logging.info("AutoReconnect error while checking documents, going to retry.")
+				retries -= 1
+				time.sleep(0.5)
+		return None
+
+	doc_ids_found = get_doc_ids_with_retries(10)
+	if not doc_ids_found:
+		logging.info("Unable to retrieve documents for checking.")
+		return None
 	diff = acknowledged_doc_ids.difference(doc_ids_found)
 	# The percentage of writes that were acknowledged and also became durable.
 	durable_pct = (1.0-float(len(diff))/len(acknowledged_doc_ids)) * 100
@@ -129,8 +144,13 @@ def run_workload():
 		logging.info("Worker %d, writes acknowledged by server: %d" % (w.tid, len(w.get_acknowledged_ids())))
 
 	# Do a dummy majority write to ensure that all previous writes committed.
-	dummyColl = db["_dummy_"].with_options(write_concern=pymongo.write_concern.WriteConcern(w="majority"))
-	dummyColl.insert_one({"dummy": 1})
+	logging.info("Doing dummy majority write before checking collection.")
+	try:
+		dummyColl = db["_dummy_"].with_options(write_concern=pymongo.write_concern.WriteConcern(w="majority"))
+		dummyColl.insert_one({"dummy": 1})
+	except:
+		logging.info("Dummy majority write failed. Sleeping a bit instead.")
+		time.sleep(10.0)
 
 	acknowledged_docid_set = []
 	for w in workers:
@@ -138,12 +158,16 @@ def run_workload():
 	acknowledged_docid_set = set(acknowledged_docid_set)
 
 	# Create a new client for the checking procedure.
+	logging.info("Going to check the collection.")
 	client = MongoClient(args.host, args.port, replicaset=args.replset)
 	db = client[args.dbName]
 	coll = db[args.collName]
 	stats = check_docs(db, coll, acknowledged_docid_set)
 	logging.info("Finished checking collection.")
-	logging.info(stats)
+	if stats is None:
+		logging.info("Error checking collection.")
+	else:
+		logging.info(stats)
 
 if __name__ == '__main__':
 	run_workload()
