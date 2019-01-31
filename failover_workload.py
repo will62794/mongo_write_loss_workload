@@ -26,6 +26,7 @@ class WriteWorker(threading.Thread):
 
 	def insert_docs(self):
 		t_start = time.time()
+		progress_interval_docs = 50 # Log after every N documents.
 		for i in xrange(self.nDocs):
 
 			# Check time limit.
@@ -42,7 +43,8 @@ class WriteWorker(threading.Thread):
 				if acknowledged:
 					self.docs_acknowledged.append(doc_to_insert);
 				strvals = (self.tid, doc_to_insert, elapsed, self.timeLimitSecs, (elapsed/self.timeLimitSecs*100))
-				logging.info("Worker %d, inserted doc: %s, elapsed: %d/%d secs, progress: %d%%" % strvals)
+				if (i % progress_interval_docs) == 0:
+					logging.info("Worker %d, inserted doc: %s, elapsed: %d/%d secs, progress: %d%%" % strvals)
 			except pymongo.errors.AutoReconnect as e:
 				logging.info("Caught AutoReconnect exception: " + str(e))
 
