@@ -108,6 +108,15 @@ def cmdline_args():
 
 	return args
 
+def drop_test_collection(args):
+	# Clean up the test collection.
+	logging.info("Dropping test collection.")
+	client = MongoClient(args.host, args.port, replicaset=args.replset)
+	db = client[args.dbName]
+	coll = db[args.collName].with_options(write_concern=pymongo.write_concern.WriteConcern(w="majority"))
+	coll.drop()		
+	logging.info("Dropped test collection.")
+
 def run_workload():
 	args = cmdline_args()
 
@@ -119,12 +128,13 @@ def run_workload():
 	# Set up basic logging.
 	logging.basicConfig(filename=args.log, filemode='w', format='%(asctime)s %(message)s', level=logging.INFO)
 
-	# Clean up the test collection.
-	logging.info("Dropping test collection.")
-	client = MongoClient(args.host, args.port, replicaset=args.replset)
-	db = client[args.dbName]
-	coll = db[args.collName].with_options(write_concern=pymongo.write_concern.WriteConcern(w="majority"))
-	coll.drop()	
+	# Drop test collection with retries.
+	for i in range(10):
+		try:
+			drop_test_collection(args)
+			break
+		except Exception as e:
+			logging.info("Failed to drop collection: " + str(e) + ". Retrying.")
 
 	logging.info("Running workload with parameters:")
 	logging.info(vars(args))
