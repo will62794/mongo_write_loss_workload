@@ -71,7 +71,7 @@ def check_docs(db, coll, acknowledged_doc_ids):
 			except pymongo.errors.AutoReconnect as e:
 				logging.info("AutoReconnect error while checking documents, going to retry.")
 				retries -= 1
-				time.sleep(0.5)
+				time.sleep(2.0)
 		return None
 
 	doc_ids_found = get_doc_ids_with_retries(10)
