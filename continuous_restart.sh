@@ -33,6 +33,7 @@ randweibull() {
 # Kill and restart the node so we know it's running.
 echo "Making sure the mongod is running."
 killall -9 mongod || true
+sleep $sleep_before_restart_secs # sleep a bit to be safe.
 mongodb/bin/mongod --config /tmp/mongo_port_27017.conf
 
 # Sleep initially so we don't kill the node right away.
