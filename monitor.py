@@ -6,6 +6,8 @@ from pymongo import MongoClient
 #
 # Run `watch -n 1 python monitor.py` for easy monitoring.
 #
+# Note: there is a better version of this at https://github.com/dwmkerr/mongo-monitor.
+#
 
 hostnames=["10.2.0.200", "10.2.0.201", "10.2.0.202"]
 
