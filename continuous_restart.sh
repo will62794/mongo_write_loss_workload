@@ -5,14 +5,19 @@
 #
 # Usage:
 #
-# ./continuous_restart.sh <mean>
+# ./continuous_restart.sh <mean> <sleep_before_restart_secs>
 #
-# where "mean" is the scale parameter used for Weibull restart distribution.
+# where "mean" is the scale parameter used for Weibull restart distribution, and 'sleep_before_restart_secs' is 
+# how long to wait before restarting a mongod node after killing it.
 #
 
 set -e
 
 restart_interval_mean="$1"
+
+# Sleep for a fixed amount of time before restarting nodes.
+sleep_before_restart_secs="$2"
+
 
 # Draw a random value from an exponential distribution with specified mean.
 randexp(){
@@ -42,6 +47,10 @@ do
 	# Kill the mongod.
 	echo "[RUNNING] Killing mongod on `hostname`"
 	killall -9 mongod
+
+	# Sleep a bit before restarting.
+	echo "[STOPPED] Restarting mongod in $sleep_before_restart_secs seconds."
+	sleep $sleep_before_restart_secs
 
 	# Restart the node.
 	echo "[STOPPED] Restarting mongod."

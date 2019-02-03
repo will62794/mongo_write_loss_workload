@@ -22,14 +22,15 @@ if [ "$#" -ne 3 ]; then
 fi
 
 
-restart_interval_mean_secs="100"
+restart_interval_weibull_scale_secs="60"
+sleep_before_restart_secs="10"
 numDocs="200000000"
 timeLimitSecs="$1"
 numWorkers="30"
 writeConcern="$2"
 netLatencyMS="$3"
 datestr=`date +"%Y_%m_%d_%I_%M_%S"`
-logfile="workload_results/workload_w${writeConcern}_latency_${netLatencyMS}ms_timeLimitSecs_${timeLimitSecs}_${datestr}.log"
+logfile="workload_results/workload_w${writeConcern}_latency_${netLatencyMS}ms_timeLimitSecs_${timeLimitSecs}_weibullScale_${restart_interval_weibull_scale_secs}_sleepBeforeRestartSecs_${sleep_before_restart_secs}_${datestr}.log"
 
 # Make sure Linux traffic control and numpy are installed on all nodes.
 python ../bin/conn.py -d md.0 md.1 md.2 -c "sudo yum -y install tc numpy"
@@ -58,7 +59,7 @@ addlatencycmd1="$addlatencycmd1 && sudo /usr/sbin/tc filter add dev eth0 parent 
 addlatencycmd2="$addlatencycmd && sudo /usr/sbin/tc filter add dev eth0 parent 1:0 protocol ip prio 1 u32 match ip dst 10.2.0.200 flowid 2:1"
 addlatencycmd2="$addlatencycmd2 && sudo /usr/sbin/tc filter add dev eth0 parent 1:0 protocol ip prio 1 u32 match ip dst 10.2.0.201 flowid 2:1"
 
-runcmd="nohup bash continuous_restart.sh $restart_interval_mean_secs > restarts.log &"
+runcmd="nohup bash continuous_restart.sh $restart_interval_weibull_scale_secs $sleep_before_restart_secs > restarts.log &"
 
 python ../bin/conn.py -d md.0 md.1 md.2 -c "$killcmd"
 python ../bin/conn.py -d md.0 md.1 md.2 -c "$removelatencycmd"
