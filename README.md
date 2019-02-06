@@ -1,4 +1,4 @@
-#MongoDB w:1 Write Loss Workload
+# MongoDB w:1 Write Loss Workload
 
 This repository contains scripts for running experiments to quantify the amount of w:1 writes that will be lost by a replica set under standard failure modes. The workloads are designed to work with MongoDB's DSI testing framework. The [failover_workload.py](failover_workload.py) script is an insert-only Python workload that runs against a specified replica set. It runs a number of concurrent clients that each insert globally unique documents into the database at a given write concern. At the end of the test, it compares the number of inserts that were acknowledged to the client with the number of inserts that actually appeared in the databae i.e. were durable. Here is an example of how to run the workload script from the command line:
 
