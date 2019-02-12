@@ -11,3 +11,20 @@ There is also the [continuous_restart.sh](continuous_restart.sh) script which ha
 ```
 ./continuous_restart.sh <weibull_scale_param> <sleep_before_restart_secs>
 ```
+
+## Running a Workload
+
+To run a workload, you must have already deployed the hosts for a 3 node DSI replica set, and set up the MongoDB nodes, by running the `python bin/mongodb_setup.py` script 
+from DSI. You can then run the workload script from within the DSI "work directory" with the following command:
+
+```
+./run_workload.sh 3600 1 100
+```
+
+This will run a workload with a max time limit of 3600 seconds, a write concern of "1", and will add an artifical network latency of 100 milliseconds. The results from the workload will be put into a log file on the workload client. You can easily SSH into the workload client by running
+
+```
+python ../bin/conn.py wc
+```
+
+from within the DSI work directory.
